@@ -1,0 +1,5 @@
+SELECT t.table_name
+FROM INFORMATION_SCHEMA.tables t
+INNER JOIN INFORMATION_SCHEMA.columns c ON c.table_schema = t.table_schema AND c.table_name = t.table_name
+WHERE t.table_type = 'BASE TABLE' AND c.column_name = 'your_column_name'
+ORDER BY t.table_name;
