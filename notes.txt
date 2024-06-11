@@ -92,3 +92,42 @@ GET /api/workflows/{workflow_id}/steps/{step_id}/rules/{rule_id}: Get details of
 POST /api/workflows/{workflow_id}/steps/{step_id}/rules: Create a new business rule for a step.
 PUT /api/workflows/{workflow_id}/steps/{step_id}/rules/{rule_id}: Update an existing business rule.
 DELETE /api/workflows/{workflow_id}/steps/{step_id}/rules/{rule_id}: Delete a business rule.
+
+data
+-- Insert dummy users
+INSERT INTO users (username, email, password_hash) VALUES
+('john_doe', 'john@example.com', 'password123'),
+('jane_smith', 'jane@example.com', 'password456'),
+('alice_wonder', 'alice@example.com', 'password789');
+
+-- Insert dummy workflows
+INSERT INTO workflows (name, description, created_by) VALUES
+('Onboarding Process', 'Workflow for new employee onboarding', 1),
+('Bug Tracking System', 'Workflow for tracking and resolving bugs', 2),
+('Expense Approval Process', 'Workflow for approving employee expenses', 3);
+
+-- Insert dummy steps
+INSERT INTO steps (workflow_id, name, description, sequence) VALUES
+(1, 'Employee Application', 'Step for submitting employee application', 1),
+(1, 'Document Submission', 'Step for submitting required documents', 2),
+(2, 'Bug Reporting', 'Step for reporting a bug', 1),
+(2, 'Bug Triage', 'Step for triaging reported bugs', 2),
+(3, 'Expense Submission', 'Step for submitting expense report', 1),
+(3, 'Manager Approval', 'Step for manager approval of expenses', 2);
+
+-- Insert dummy tasks
+INSERT INTO tasks (step_id, description, due_date, assigned_to, completed) VALUES
+(1, 'Fill out employee application form', '2024-06-15', 1, FALSE),
+(1, 'Submit resume and cover letter', '2024-06-16', 1, FALSE),
+(2, 'Upload identification documents', '2024-06-20', 1, FALSE),
+(3, 'Report bug found in login page', '2024-06-14', 2, FALSE),
+(4, 'Assign priority to reported bugs', '2024-06-16', 2, FALSE),
+(5, 'Submit travel expense report', '2024-06-18', 3, FALSE),
+(6, 'Review and approve employee expense report', '2024-06-20', 3, FALSE);
+
+-- Insert dummy business rules (Note: Dummy JSON data)
+INSERT INTO business_rules (step_id, rule_json) VALUES
+(1, '{"condition": {"and": [{"fact": "age", "operator": "greaterThanInclusive", "value": 18}, {"fact": "documents", "operator": "contains", "value": "resume"}]}, "action": {"type": "notify", "message": "Application submitted successfully"}}'),
+(2, '{"condition": {"fact": "severity", "operator": "greaterThan", "value": 2}, "action": {"type": "escalate", "level": "high"}}'),
+(3, '{"condition": {"fact": "amount", "operator": "greaterThan", "value": 100}, "action": {"type": "notify", "message": "Expense requires manager approval"}}');
+
