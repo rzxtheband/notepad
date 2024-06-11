@@ -5,99 +5,90 @@ WHERE t.table_type = 'BASE TABLE' AND c.column_name = 'your_column_name'
 ORDER BY t.table_name;
 
 
+-- Users table to store information about users
 CREATE TABLE users (
     user_id INT PRIMARY KEY AUTO_INCREMENT,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password VARCHAR(100) NOT NULL,
-    role ENUM('admin', 'reviewer', 'user') NOT NULL
+    username VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (email)
 );
 
+-- Workflow table to store information about workflows
 CREATE TABLE workflows (
     workflow_id INT PRIMARY KEY AUTO_INCREMENT,
-    workflow_name VARCHAR(100) NOT NULL,
-    creator_id INT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    created_by INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (creator_id) REFERENCES users(user_id)
+    FOREIGN KEY (created_by) REFERENCES users(user_id)
 );
 
-CREATE TABLE stages (
-    stage_id INT PRIMARY KEY AUTO_INCREMENT,
-    stage_name VARCHAR(100) NOT NULL,
-    workflow_id INT,
-    status ENUM('new', 'under review', 'approved', 'rejected') NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+-- Steps table to define the steps within a workflow
+CREATE TABLE steps (
+    step_id INT PRIMARY KEY AUTO_INCREMENT,
+    workflow_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    sequence INT NOT NULL,
     FOREIGN KEY (workflow_id) REFERENCES workflows(workflow_id)
 );
 
-CREATE TABLE stage_permissions (
-    permission_id INT PRIMARY KEY AUTO_INCREMENT,
-    stage_id INT,
-    role ENUM('admin', 'reviewer') NOT NULL,
+-- Tasks table to store tasks related to each step in a workflow
+CREATE TABLE tasks (
+    task_id INT PRIMARY KEY AUTO_INCREMENT,
+    step_id INT NOT NULL,
+    description TEXT,
+    due_date TIMESTAMP,
+    assigned_to INT,
+    completed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (stage_id) REFERENCES stages(stage_id)
+    FOREIGN KEY (step_id) REFERENCES steps(step_id),
+    FOREIGN KEY (assigned_to) REFERENCES users(user_id)
 );
 
-CREATE TABLE fields (
-    field_id INT PRIMARY KEY AUTO_INCREMENT,
-    field_name VARCHAR(100) NOT NULL,
-    field_type ENUM('text', 'number', 'date', 'dropdown', 'checkbox', 'radio') NOT NULL,
-    stage_id INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (stage_id) REFERENCES stages(stage_id)
+-- Business rules table to store JSON rules for each workflow step
+CREATE TABLE business_rules (
+    rule_id INT PRIMARY KEY AUTO_INCREMENT,
+    step_id INT NOT NULL,
+    rule_json JSON NOT NULL,
+    FOREIGN KEY (step_id) REFERENCES steps(step_id)
 );
 
-CREATE TABLE tickets (
-    ticket_id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT,
-    stage_id INT,
-    status ENUM('new', 'under review', 'approved', 'rejected') NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id),
-    FOREIGN KEY (stage_id) REFERENCES stages(stage_id)
-);
+routes:
+User Management:
 
-CREATE TABLE ticket_fields (
-    ticket_field_id INT PRIMARY KEY AUTO_INCREMENT,
-    ticket_id INT,
-    field_id INT,
-    field_value VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (ticket_id) REFERENCES tickets(ticket_id),
-    FOREIGN KEY (field_id) REFERENCES fields(field_id)
-);
+POST /api/users/register: Register a new user.
+POST /api/users/login: Log in a user.
+GET /api/users/profile: Get user profile information.
+PUT /api/users/profile: Update user profile information.
+POST /api/users/logout: Log out the current user.
+Workflow Management:
 
+GET /api/workflows: Get a list of all workflows.
+GET /api/workflows/{workflow_id}: Get details of a specific workflow.
+POST /api/workflows: Create a new workflow.
+PUT /api/workflows/{workflow_id}: Update an existing workflow.
+DELETE /api/workflows/{workflow_id}: Delete a workflow.
+Step Management:
 
+GET /api/workflows/{workflow_id}/steps: Get all steps in a workflow.
+GET /api/workflows/{workflow_id}/steps/{step_id}: Get details of a specific step.
+POST /api/workflows/{workflow_id}/steps: Create a new step in a workflow.
+PUT /api/workflows/{workflow_id}/steps/{step_id}: Update an existing step.
+DELETE /api/workflows/{workflow_id}/steps/{step_id}: Delete a step.
+Task Management:
 
+GET /api/workflows/{workflow_id}/steps/{step_id}/tasks: Get all tasks in a step.
+GET /api/workflows/{workflow_id}/steps/{step_id}/tasks/{task_id}: Get details of a specific task.
+POST /api/workflows/{workflow_id}/steps/{step_id}/tasks: Create a new task in a step.
+PUT /api/workflows/{workflow_id}/steps/{step_id}/tasks/{task_id}: Update an existing task.
+DELETE /api/workflows/{workflow_id}/steps/{step_id}/tasks/{task_id}: Delete a task.
+Business Rules Management:
 
-Routes:
-Certainly! Here are the possible API routes from an end user's perspective based on the requirements:
-1. User Authentication:
-    * POST /api/login: User login with username and password.
-    * POST /api/logout: User logout.
-2. Workflow Operations:
-    * GET /api/workflows: Retrieve all available workflows.
-    * GET /api/workflows/{workflow_id}: Retrieve details of a specific workflow.
-    * POST /api/workflows: Create a new workflow (accessible only to admin users).
-    * PUT /api/workflows/{workflow_id}: Update an existing workflow (accessible only to admin users).
-    * DELETE /api/workflows/{workflow_id}: Delete a workflow (accessible only to admin users).
-3. Stage Operations:
-    * GET /api/workflows/{workflow_id}/stages: Retrieve all stages of a specific workflow.
-    * GET /api/stages/{stage_id}: Retrieve details of a specific stage.
-    * POST /api/workflows/{workflow_id}/stages: Create a new stage within a workflow (accessible only to admin users).
-    * PUT /api/stages/{stage_id}: Update an existing stage (accessible only to admin users).
-    * DELETE /api/stages/{stage_id}: Delete a stage (accessible only to admin users).
-4. Ticket Operations:
-    * GET /api/tickets: Retrieve all tickets for the authenticated user.
-    * GET /api/tickets/{ticket_id}: Retrieve details of a specific ticket.
-    * POST /api/tickets: Create a new ticket.
-    * PUT /api/tickets/{ticket_id}: Update an existing ticket.
-    * DELETE /api/tickets/{ticket_id}: Delete a ticket.
-5. Form Field Operations:
-    * GET /api/stages/{stage_id}/fields: Retrieve all form fields for a specific stage.
-    * GET /api/fields/{field_id}: Retrieve details of a specific form field.
-    * POST /api/stages/{stage_id}/fields: Create a new form field within a stage (accessible only to admin users).
-    * PUT /api/fields/{field_id}: Update an existing form field (accessible only to admin users).
-    * DELETE /api/fields/{field_id}: Delete a form field (accessible only to admin users).
-6. Ticket Status Operations:
-    * PUT /api/tickets/{ticket_id}/status: Update the status of a ticket (accessible only to admin users or reviewers).
+GET /api/workflows/{workflow_id}/steps/{step_id}/rules: Get all business rules for a step.
+GET /api/workflows/{workflow_id}/steps/{step_id}/rules/{rule_id}: Get details of a specific business rule.
+POST /api/workflows/{workflow_id}/steps/{step_id}/rules: Create a new business rule for a step.
+PUT /api/workflows/{workflow_id}/steps/{step_id}/rules/{rule_id}: Update an existing business rule.
+DELETE /api/workflows/{workflow_id}/steps/{step_id}/rules/{rule_id}: Delete a business rule.
