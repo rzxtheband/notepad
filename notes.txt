@@ -131,3 +131,29 @@ INSERT INTO business_rules (step_id, rule_json) VALUES
 (2, '{"condition": {"fact": "severity", "operator": "greaterThan", "value": 2}, "action": {"type": "escalate", "level": "high"}}'),
 (3, '{"condition": {"fact": "amount", "operator": "greaterThan", "value": 100}, "action": {"type": "notify", "message": "Expense requires manager approval"}}');
 
+query
+
+SELECT 
+    w.workflow_id,
+    w.name AS workflow_name,
+    w.description AS workflow_description,
+    s.step_id,
+    s.name AS step_name,
+    s.description AS step_description,
+    t.task_id,
+    t.description AS task_description,
+    t.due_date,
+    t.assigned_to,
+    t.completed,
+    br.rule_id,
+    br.rule_json AS business_rule
+FROM 
+    workflows w
+JOIN 
+    steps s ON w.workflow_id = s.workflow_id
+LEFT JOIN 
+    tasks t ON s.step_id = t.step_id
+LEFT JOIN 
+    business_rules br ON s.step_id = br.step_id;
+
+
