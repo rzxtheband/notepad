@@ -157,3 +157,52 @@ LEFT JOIN
     business_rules br ON s.step_id = br.step_id;
 
 
+# Use Ubuntu 20.04 LTS as the base image
+FROM ubuntu:20.04
+
+# Install LXDE and XRDP
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    lxde xrdp && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Configure XRDP to start LXDE
+RUN echo "startlxde" > ~/.xsession
+
+# Expose XRDP port
+EXPOSE 3389
+
+# Start XRDP when container launches
+CMD ["xrdp", "--nodaemon"]
+
+
+stages:
+  - build
+
+build_image:
+  stage: build
+  image: docker:stable
+
+  variables:
+    DOCKER_DRIVER: overlay2
+
+  services:
+    - docker:dind
+
+  before_script:
+    - docker info
+
+  script:
+    - docker build -t my-lxde-rdp-image .
+
+  after_script:
+    - docker images
+
+  artifacts:
+    paths:
+      - my-lxde-rdp-image.tar
+
+  allow_failure: false
+
+
